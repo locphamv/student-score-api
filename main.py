@@ -13,6 +13,13 @@ class StudentCreate(BaseModel):
     science: float = Field(ge=0, le=10)
 
 
+class StudentUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    math: float = Field(ge=0, le=10)
+    english: float = Field(ge=0, le=10)
+    science: float = Field(ge=0, le=10)
+
+
 students = [
     {
         "id": 1,
@@ -99,3 +106,43 @@ def create_student(student: StudentCreate):
 
     students.append(new_student)
     return new_student
+
+
+@app.put("/students/{student_id}")
+def update_student(
+    student_id: int,
+    updated_data: StudentUpdate,
+):
+    # Find the student by ID
+    for index, student in enumerate(students):
+        if student["id"] == student_id:
+            # Calculate the updated average
+            average = round(
+                (
+                    updated_data.math
+                    + updated_data.english
+                    + updated_data.science
+                )
+                / 3,
+                2,
+            )
+
+            # Create the updated student
+            updated_student = {
+                "id": student_id,
+                "name": updated_data.name,
+                "math": updated_data.math,
+                "english": updated_data.english,
+                "science": updated_data.science,
+                "average": average,
+            }
+
+            # Replace the existing student
+            students[index] = updated_student
+
+            return updated_student
+
+    raise HTTPException(
+        status_code=404,
+        detail="Student not found",
+    )
