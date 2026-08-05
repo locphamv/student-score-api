@@ -1,5 +1,7 @@
-from fastapi import FastAPI, HTTPException, status
+from typing import Literal
+from fastapi import FastAPI, HTTPException, Query, status
 from pydantic import BaseModel, Field
+
 
 
 # Create the FastAPI application
@@ -54,8 +56,47 @@ def health_check():
 
 
 @app.get("/students")
-def get_students():
-    return students
+def get_students(
+    passed: bool | None = None,
+    minimum_average: float | None = Query(
+        default=None,
+        ge=0,
+        le=10,
+    ),
+    sort_order: Literal["asc", "desc"] | None = None,
+):
+    result = students.copy()
+
+    # Filter by pass/fail status
+    if passed is not None:
+        if passed:
+            result = [
+                student
+                for student in result
+                if student["average"] >= 5
+            ]
+        else:
+            result = [
+                student
+                for student in result
+                if student["average"] < 5
+            ]
+
+    # Filter by minimim average score
+    if minimum_average is not None:
+        result = [
+            student
+            for student in result
+            if student["average"] >= minimum_average
+        ]
+
+    # Sort by average score
+    if sort_order is not None:
+        result.sort(
+            key=lambda student: student["average"],
+            reverse=sort_order == "desc"
+        )
+    return result
 
 
 @app.get("/students/{student_id}")
