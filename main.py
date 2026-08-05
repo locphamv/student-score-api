@@ -1,7 +1,7 @@
+from ctypes import sizeof
 from typing import Literal
 from fastapi import FastAPI, HTTPException, Query, status
 from pydantic import BaseModel, Field
-
 
 
 # Create the FastAPI application
@@ -26,16 +26,25 @@ students = [
     {
         "id": 1,
         "name": "An",
+        "math": 8.0,
+        "english": 7.0,
+        "science": 9.0,
         "average": 8.0,
     },
     {
         "id": 2,
         "name": "Binh",
+        "math": 6.0,
+        "english": 5.5,
+        "science": 7.0,
         "average": 6.17,
     },
     {
         "id": 3,
         "name": "Chi",
+        "math": 9.5,
+        "english": 9.0,
+        "science": 8.5,
         "average": 9.0,
     },
 ]
@@ -64,6 +73,15 @@ def get_students(
         le=10,
     ),
     sort_order: Literal["asc", "desc"] | None = None,
+    offset: int = Query(
+        default=0,
+        ge=0,
+    ),
+    limit: int = Query(
+        default=10,
+        ge=1,
+        le=100,
+    ),
 ):
     result = students.copy()
 
@@ -82,7 +100,7 @@ def get_students(
                 if student["average"] < 5
             ]
 
-    # Filter by minimim average score
+    # Filter by minimum average score
     if minimum_average is not None:
         result = [
             student
@@ -94,9 +112,22 @@ def get_students(
     if sort_order is not None:
         result.sort(
             key=lambda student: student["average"],
-            reverse=sort_order == "desc"
+            reverse=sort_order == "desc",
         )
-    return result
+
+    # Count before pagination
+    total = len(result)
+
+    # Apply pagination
+    paginated_students = result[offset: offset + limit]
+
+    return {
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "count": len(paginated_students),
+        "students": paginated_students,
+    }
 
 
 @app.get("/students/{student_id}")
@@ -123,8 +154,6 @@ def create_student(student: StudentCreate):
         ) + 1
     else:
         new_id = 1
-
-    print(new_id)
 
     average = round(
         (
