@@ -1,72 +1,22 @@
-from ctypes import sizeof
 from typing import Literal
+
 from fastapi import FastAPI, HTTPException, Query, status
-from pydantic import BaseModel, Field
+
+from app.data import students
+from app.models import (
+    DeleteStudentResponse,
+    StudentCreate,
+    StudentListResponse,
+    StudentResponse,
+    StudentUpdate,
+)
 
 
 # Create the FastAPI application
-app = FastAPI()
-
-
-class StudentBase(BaseModel):
-    name: str = Field(min_length=1, max_length=50)
-    math: float = Field(ge=0, le=10)
-    english: float = Field(ge=0, le=10)
-    science: float = Field(ge=0, le=10)
-
-
-class StudentCreate(StudentBase):
-    pass
-
-
-class StudentUpdate(StudentBase):
-    pass
-
-
-class StudentResponse(StudentBase):
-    id: int
-    average: float
-
-
-class StudentListResponse(BaseModel):
-    total: int
-    offset: int
-    limit: int
-    count: int
-    students: list[StudentResponse]
-
-
-class DeleteStudentResponse(BaseModel):
-    message: str
-    student: StudentResponse
-
-
-students = [
-    {
-        "id": 1,
-        "name": "An",
-        "math": 8.0,
-        "english": 7.0,
-        "science": 9.0,
-        "average": 8.0,
-    },
-    {
-        "id": 2,
-        "name": "Binh",
-        "math": 6.0,
-        "english": 5.5,
-        "science": 7.0,
-        "average": 6.17,
-    },
-    {
-        "id": 3,
-        "name": "Chi",
-        "math": 9.5,
-        "english": 9.0,
-        "science": 8.5,
-        "average": 9.0,
-    },
-]
+app = FastAPI(
+    title="Student Score API",
+    version="1.0.0",
+)
 
 
 @app.get("/")
