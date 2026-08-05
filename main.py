@@ -8,18 +8,37 @@ from pydantic import BaseModel, Field
 app = FastAPI()
 
 
-class StudentCreate(BaseModel):
+class StudentBase(BaseModel):
     name: str = Field(min_length=1, max_length=50)
     math: float = Field(ge=0, le=10)
     english: float = Field(ge=0, le=10)
     science: float = Field(ge=0, le=10)
 
 
-class StudentUpdate(BaseModel):
-    name: str = Field(min_length=1, max_length=50)
-    math: float = Field(ge=0, le=10)
-    english: float = Field(ge=0, le=10)
-    science: float = Field(ge=0, le=10)
+class StudentCreate(StudentBase):
+    pass
+
+
+class StudentUpdate(StudentBase):
+    pass
+
+
+class StudentResponse(StudentBase):
+    id: int
+    average: float
+
+
+class StudentListResponse(BaseModel):
+    total: int
+    offset: int
+    limit: int
+    count: int
+    students: list[StudentResponse]
+
+
+class DeleteStudentResponse(BaseModel):
+    message: str
+    student: StudentResponse
 
 
 students = [
@@ -64,7 +83,10 @@ def health_check():
     }
 
 
-@app.get("/students")
+@app.get(
+    "/students",
+    response_model=StudentListResponse
+)
 def get_students(
     passed: bool | None = None,
     minimum_average: float | None = Query(
@@ -130,7 +152,10 @@ def get_students(
     }
 
 
-@app.get("/students/{student_id}")
+@app.get(
+    "/students/{student_id}",
+    response_model=StudentResponse
+)
 def get_student(student_id: int):
     for student in students:
         if student["id"] == student_id:
@@ -144,6 +169,7 @@ def get_student(student_id: int):
 
 @app.post(
     "/students",
+    response_model=StudentResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def create_student(student: StudentCreate):
@@ -178,7 +204,10 @@ def create_student(student: StudentCreate):
     return new_student
 
 
-@app.put("/students/{student_id}")
+@app.put(
+    "/students/{student_id}",
+    response_model=StudentResponse,
+)
 def update_student(
     student_id: int,
     updated_data: StudentUpdate,
@@ -218,7 +247,10 @@ def update_student(
     )
 
 
-@app.delete("/students/{student_id}")
+@app.delete(
+    "/students/{student_id}",
+    response_model=DeleteStudentResponse,
+)
 def delete_student(student_id: int):
     for index, student in enumerate(students):
         if student["id"] == student_id:
