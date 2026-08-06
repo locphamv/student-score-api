@@ -1,7 +1,17 @@
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query, status
+from fastapi import FastAPI
+
+from app.database import create_db_and_tables
 from app.routers.students import router as students_router
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create database tables before receiving requests
+    create_db_and_tables()
+
+    yield
 
 # Create the FastAPI application
 app = FastAPI(
@@ -24,4 +34,3 @@ def health_check():
     return {
         "status": "healthy",
     }
-
