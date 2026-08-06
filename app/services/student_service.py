@@ -2,6 +2,8 @@ from typing import Literal
 
 from app.data import students
 from app.models import StudentCreate, StudentUpdate
+from sqlmodel import Session
+from app.db_models import Student
 
 
 def calculate_average(
@@ -58,37 +60,31 @@ def list_students(
     }
 
 
-def get_student_by_id(student_id: int) -> dict | None:
-    for student in students:
-        if student["id"] == student_id:
-            return student
-    return None
+def get_student_by_id(session: Session, student_id: int) -> Student | None:
+    return session.get(Student, student_id)
 
 
-def create_student(student_data: StudentCreate) -> dict:
-    if students:
-        new_id = max(
-            student["id"]
-            for student in students
-        ) + 1
-    else:
-        new_id = 1
-
+def create_student(
+        session: Session,
+        student_data: StudentCreate
+) -> Student:
     average = calculate_average(
         student_data.math,
         student_data.english,
         student_data.science
     )
-    new_student = {
-        "id": new_id,
-        "name": student_data.name,
-        "math": student_data.math,
-        "english": student_data.english,
-        "science": student_data.science,
-        "average": average
-    }
-    students.append(new_student)
-    return new_student
+    db_student = Student(
+        name=student_data.name,
+        math=student_data.math,
+        english=student_data.english,
+        science=student_data.science,
+        average=average
+    )
+    session.add(db_student)
+    session.commit()
+    session.refresh(db_student)
+
+    return db_student
 
 
 def update_student(
@@ -120,7 +116,7 @@ def update_student(
 
 
 def delete_student(student_id: int) -> dict | None:
-    for index,student in enumerate(students):
+    for index, student in enumerate(students):
         if student["id"] == student_id:
             deleted_student = students.pop(index)
             return deleted_student

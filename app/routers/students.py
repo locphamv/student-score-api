@@ -1,7 +1,9 @@
 from typing import Literal
 
 from dns import query
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlmodel import Session
+from app.database import get_session
 
 from app.data import students
 from app.models import (
@@ -11,6 +13,7 @@ from app.models import (
     StudentResponse,
     StudentUpdate,
 )
+from app.services import student_service
 
 router = APIRouter(
     prefix="/students",
@@ -91,15 +94,20 @@ def get_students(
     "/{student_id}",
     response_model=StudentResponse,
 )
-def get_student(student_id: int):
-    for student in students:
-        if student["id"] == student_id:
-            return student
-
-    raise HTTPException(
-        status_code=404,
-        detail="Student not found",
+def get_student(
+    student_id: int,
+    session: Session = Depends(get_session)
+):
+    student = student_service.get_student_by_id(
+        session,
+        student_id,
     )
+    if student is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Student not found",
+        )
+    return student
 
 
 @router.post(
@@ -107,35 +115,14 @@ def get_student(student_id: int):
     response_model=StudentResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_student(student: StudentCreate):
-    if student:
-        new_id = max(
-            student_item["id"]
-            for student_item in students
-        ) + 1
-    else:
-        new_id = 1
-
-    average = round(
-        (
-            student.math
-            + student.english
-            + student.science
-        )
-        / 3,
-        2,
+def create_student(
+        student: StudentCreate,
+        session: Session = Depends(get_session)
+):
+    return student_service.create_student(
+        session,
+        student,
     )
-    new_student = {
-        "id": new_id,
-        "name": student.name,
-        "math": student.math,
-        "english": student.english,
-        "science": student.science,
-        "average": average,
-    }
-
-    students.append(new_student)
-    return new_student
 
 
 @router.put(
