@@ -16,10 +16,13 @@ class StudentUpdate(StudentBase):
     pass
 
 
-class StudentResponse(StudentBase):
+class StudentResponse(BaseModel):
     id: int
+    name: str
+    math: float
+    english: float
+    science: float
     average: float
-
 
 class StudentListResponse(BaseModel):
     total: int
