@@ -42,52 +42,18 @@ def get_students(
         ge=1,
         le=100,
     ),
+    session: Session = Depends(get_session),
 ):
-    result = students.copy()
+    return student_service.list_students(
+        session = session,
+        passed = passed,
+        minimum_average = minimum_average,
+        sort_order = sort_order,
+        offset = offset,
+        limit = limit,
+    )
 
-    # Filter by pass/fail status
-    if passed is not None:
-        if passed:
-            result = [
-                student
-                for student in result
-                if student["average"] >= 5
-            ]
-        else:
-            result = [
-                student
-                for student in result
-                if student["average"] < 5
-            ]
 
-        # Filter by minimum average score
-    if minimum_average is not None:
-        result = [
-            student
-            for student in result
-            if student["average"] >= minimum_average
-        ]
-
-        # Sort by average score
-    if sort_order is not None:
-        result.sort(
-            key=lambda student: student["average"],
-            reverse=sort_order == "desc",
-        )
-
-        # Count before pagination
-    total = len(result)
-
-    # Apply pagination
-    paginated_students = result[offset: offset + limit]
-
-    return {
-        "total": total,
-        "offset": offset,
-        "limit": limit,
-        "count": len(paginated_students),
-        "students": paginated_students,
-    }
 
 
 @router.get(

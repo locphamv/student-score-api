@@ -1,9 +1,11 @@
 from typing import Literal
 
+from sqlalchemy import func
+from sqlmodel import Session, select
+
 from app.data import students
-from app.models import StudentCreate, StudentUpdate
-from sqlmodel import Session
 from app.db_models import Student
+from app.models import StudentCreate, StudentUpdate
 
 
 def calculate_average(
@@ -16,47 +18,65 @@ def calculate_average(
 
 
 def list_students(
+        session: Session,
         passed: bool | None = None,
         minimum_average: float | None = None,
         sort_order: Literal["asc", "desc"] | None = None,
         offset: int = 0,
         limit: int = 10,
 ) -> dict:
-    result = students.copy()
+    statement = select(Student)
+
+    conditions = []
     if passed is not None:
         if passed:
-            result = [
-                student
-                for student in result
-                if student["average"] >= 5
-            ]
+            conditions.append(Student.average >= 5)
         else:
-            result = [
-                student
-                for student in result
-                if student["average"] < 5
-            ]
+            conditions.append(Student.average < 5)
 
     if minimum_average is not None:
-        result = [
-            student
-            for student in result
-            if student["average"] >= minimum_average
-        ]
-    if sort_order is not None:
-        result.sort(
-            key=lambda student: student["average"],
-            reverse=sort_order == "desc"
-        )
-    total = len(result)
-    paginated_students = result[offset: offset+limit]
+        conditions.append(Student.average >= minimum_average)
 
+    if conditions:
+        statement = statement.where(
+            *conditions
+        )
+
+    if sort_order == "asc":
+        statement = statement.order_by(
+            Student.average.asc()
+        )
+    elif sort_order == "desc":
+        statement = statement.order_by(
+            Student.average.desc()
+        )
+
+    count_statement = (
+        select(func.count())
+        .select_from(Student)
+    )
+
+    if conditions:
+        count_statement = count_statement.where(
+            *conditions
+        )
+    total = session.exec(
+        count_statement
+    ).one()
+
+    statement = (
+        statement.offset(offset)
+        .limit(limit)
+    )
+    db_students = session.exec(
+        statement
+    ).all()
     return {
         "total": total,
         "offset": offset,
         "limit": limit,
-        "count": len(paginated_students),
-        "students": paginated_students
+        "count": len(db_students),
+        "students": db_students,
     }
 
 
