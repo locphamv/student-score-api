@@ -4,7 +4,11 @@ from sqlalchemy import func
 from sqlmodel import Session, col, select
 
 from app.db_models import Student
-from app.models import StudentCreate, StudentUpdate
+from app.models import (
+    StudentCreate,
+    StudentPatch,
+    StudentUpdate,
+)
 
 
 def calculate_average(
@@ -156,5 +160,47 @@ def delete_student(
 
     session.delete(db_student)
     session.commit()
+
+    return db_student
+
+
+def patch_student(
+        session: Session,
+        student_id: int,
+        patch_data: StudentPatch,
+) -> Student | None:
+    # Find the student by primary key
+    db_student = session.get(
+        Student,
+        student_id,
+    )
+
+    if db_student is None:
+        return None
+
+    # Get only fields sent by the client
+    update_data = patch_data.model_dump(
+        exclude_unset=True,
+        exclude_none=True,
+    )
+
+    #update only the provided fields
+    for field, value in update_data.items():
+        setattr(
+            db_student,
+            field,
+            value,
+        )
+
+    # Recalculate the average after score changes
+    db_student.average = calculate_average(
+        db_student.math,
+        db_student.english,
+        db_student.science,
+    )
+
+    session.add(db_student)
+    session.commit()
+    session.refresh(db_student)
 
     return db_student

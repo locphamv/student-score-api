@@ -8,6 +8,7 @@ from app.models import (
     DeleteStudentResponse,
     StudentCreate,
     StudentListResponse,
+    StudentPatch,
     StudentResponse,
     StudentUpdate,
 )
@@ -137,3 +138,26 @@ def delete_student(
         "message": "Student deleted successfully",
         "student": deleted_student,
     }
+
+
+@router.patch(
+    "/{student_id}",
+    response_model=StudentResponse,
+)
+def patch_student(
+    student_id: int,
+    patch_data: StudentPatch,
+    session: Session = Depends(get_session),
+):
+    updated_student = student_service.patch_student(
+        session,
+        student_id,
+        patch_data,
+    )
+
+    if updated_student is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Student not found",
+        )
+    return updated_student

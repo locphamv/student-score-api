@@ -24,6 +24,7 @@ class StudentResponse(BaseModel):
     science: float
     average: float
 
+
 class StudentListResponse(BaseModel):
     total: int
     offset: int
@@ -35,3 +36,26 @@ class StudentListResponse(BaseModel):
 class DeleteStudentResponse(BaseModel):
     message: str
     student: StudentResponse
+
+
+class StudentPatch(BaseModel):
+    name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=50,
+    )
+    math: float | None = Field(
+        default=None,
+        ge=0,
+        le=10,
+    )
+    english: float | None = Field(
+        default=None,
+        ge=0,
+        le=10,
+    )
+    science: float | None = Field(
+        default=None,
+        ge=0,
+        le=10,
+    )
