@@ -308,33 +308,34 @@ def test_patch_invalid_score(
 
     assert response.status_code == 422
 
-    def test_delete_student(client: TestClient):
-        create_response = client.post(
-            "/students",
-            json={
-                "name": "An",
-                "math": 8,
-                "english": 7,
-                "science": 9,
-            },
-        )
 
-        student_id = create_response.json()["id"]
+def test_delete_student(client: TestClient):
+    create_response = client.post(
+        "/students",
+        json={
+            "name": "An",
+            "math": 8,
+            "english": 7,
+            "science": 9,
+        },
+    )
 
-        response = client.delete(
-            f"/students/{student_id}"
-        )
+    student_id = create_response.json()["id"]
 
-        data = response.json()
+    response = client.delete(
+        f"/students/{student_id}"
+    )
 
-        assert response.status_code == 200
-        assert data["student"]["id"] == student_id
+    data = response.json()
 
-        get_response = client.get(
-            f"/students/{student_id}"
-        )
+    assert response.status_code == 200
+    assert data["student"]["id"] == student_id
 
-        assert get_response.status_code == 404
+    get_response = client.get(
+        f"/students/{student_id}"
+    )
+
+    assert get_response.status_code == 404
 
 
 def test_delete_student_not_found(
@@ -400,6 +401,7 @@ def test_sort_students_descending(
         "An",
         "Binh",
     ]
+
 
 def test_sort_students_ascending(
     session: Session,
@@ -521,6 +523,7 @@ def test_student_pagination(
         "Student 4"
     )
 
+
 def test_last_page(
     session: Session,
     client: TestClient,
@@ -621,12 +624,14 @@ def test_invalid_limit(client: TestClient):
 
     assert response.status_code == 422
 
+
 def test_invalid_offset(client: TestClient):
     response = client.get(
         "/students?offset=-1"
     )
 
     assert response.status_code == 422
+
 
 def test_invalid_sort_order(
     client: TestClient,
